@@ -9,8 +9,9 @@ import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 import "@uniswap/v2-periphery/contracts/libraries/SafeMath.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IERC20.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+import "../Staking.sol";
 
-contract UniswapV2Router02 is IUniswapV2Router02 {
+contract UniswapV2Router02 is IUniswapV2Router02, Staking {
     using SafeMath for uint256;
 
     address public immutable override factory;
@@ -30,54 +31,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
     }
 
-    // **** ADD LIQUIDITY ****
-    function _addLiquidity(
-        address tokenA,
-        address tokenB,
-        uint256 amountADesired,
-        uint256 amountBDesired,
-        uint256 amountAMin,
-        uint256 amountBMin
-    ) internal virtual returns (uint256 amountA, uint256 amountB) {
-        // create the pair if it doesn't exist yet
-        if (IUniswapV2Factory(factory).getPair(tokenA, tokenB) == address(0)) {
-            IUniswapV2Factory(factory).createPair(tokenA, tokenB);
-        }
-        (uint256 reserveA, uint256 reserveB) = UniswapV2Library.getReserves(
-            factory,
-            tokenA,
-            tokenB
-        );
-        if (reserveA == 0 && reserveB == 0) {
-            (amountA, amountB) = (amountADesired, amountBDesired);
-        } else {
-            uint256 amountBOptimal = UniswapV2Library.quote(
-                amountADesired,
-                reserveA,
-                reserveB
-            );
-            if (amountBOptimal <= amountBDesired) {
-                require(
-                    amountBOptimal >= amountBMin,
-                    "UniswapV2Router: INSUFFICIENT_B_AMOUNT"
-                );
-                (amountA, amountB) = (amountADesired, amountBOptimal);
-            } else {
-                uint256 amountAOptimal = UniswapV2Library.quote(
-                    amountBDesired,
-                    reserveB,
-                    reserveA
-                );
-                assert(amountAOptimal <= amountADesired);
-                require(
-                    amountAOptimal >= amountAMin,
-                    "UniswapV2Router: INSUFFICIENT_A_AMOUNT"
-                );
-                (amountA, amountB) = (amountAOptimal, amountBDesired);
-            }
-        }
-    }
-
+    //add liquidity AND Create staking pool with liquidity token
     function addLiquidity(
         address tokenA,
         address tokenB,
@@ -110,6 +64,7 @@ contract UniswapV2Router02 is IUniswapV2Router02 {
         TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
         TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
         liquidity = IUniswapV2Pair(pair).mint(to);
+        createPool(liquidity);
     }
 
     function addLiquidityETH(
