@@ -5,9 +5,10 @@ import "./BearToken.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@uniswap/v2-core/contracts/UniswapV2ERC20.sol";
 
 contract Staking is Ownable {
-    using SafeERC20 for IERC20; // Wrappers around ERC20 operations that throw on failure
+    using SafeERC20 for UniswapV2ERC20; // Wrappers around ERC20 operations that throw on failure
     BearToken public bearToken;
     uint256 private rewardTokensPerBlock; // Number of reward tokens minted per block
     uint256 private constant REWARDS_PRECISION = 1e12; // A big number to perform mul and div operations
@@ -20,7 +21,7 @@ contract Staking is Ownable {
 
     // Staking pool
     struct Pool {
-        IERC20 stakeToken; // Token to be staked
+        UniswapV2ERC20 stakeToken; // Token to be staked
         uint256 tokensStaked; // Total tokens staked
         uint256 lastRewardedBlock; // Last block number the user had their rewards calculated
         uint256 accumulatedRewardsPerShare; // Accumulated rewards per share times REWARDS_PRECISION
@@ -55,7 +56,7 @@ contract Staking is Ownable {
      * @dev Create a new staking pool
      */
 
-    function createPool(IERC20 _stakeToken) external onlyOwner {
+    function createPool(UniswapV2ERC20 _stakeToken) external onlyOwner {
         Pool memory pool;
         pool.stakeToken = _stakeToken;
         pools.push(pool);
